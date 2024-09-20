@@ -16,16 +16,101 @@ void GarageDoor::calibrate(RotaryEncoder& encoder) {
     // TODO: Implement calibration logic here
     // cout << "Calibrating garage door..." << endl;
 
-    int pos1 = encoder.getPosition();
+    // int steps = 0;
+    // int pos1 = encoder.getPosition();
 
-    for (int i = 0; i < 1000; i++) {
-        StepperMotor::rotate_steps(-1);
+    // int pos2 = encoder.getPosition();
+
+    // cout << "pos1: " << pos1 << endl;
+    // cout << "pos2: " << pos2 << endl;
+    // cout << "steps: " << steps << endl;
+
+    // basic calibration goes as follows:
+    // if position is positive, the door is open
+    // if position is negative, the door is closed
+    // 1. get pos1, open or close the door until pos2 is one unit apart from pos1
+    // 2. move the door to one direction, until pos1 and pos2 are one unit apart
+    // 3. move the door to the other direction, until pos1 and pos2 are one unit apart
+
+    int pos1 = encoder.getPosition();
+    int pos2;
+    int steps[3] = {0};
+
+    // move until encoder stops
+    // while (!encoder.isRotating()) {
+    //     motor.rotate_steps(-1);
+    // }
+
+    cout << "initial rotation state: " << encoder.isRotating() << endl;
+
+    for (int i = 0; i < 3; i++) {
+        motor.rotate_steps(-200);
+        cout << encoder.isRotating() << endl;
     }
 
-    int pos2 = encoder.getPosition();
+    pos2 = encoder.getPosition();
 
+    cout << "End rotation state: " << encoder.isRotating() << endl;
     cout << "pos1: " << pos1 << endl;
     cout << "pos2: " << pos2 << endl;
+
+    // determine how many steps it takes for the encoder to detect a change
+    // for (int i = 0; i < 3; i++) {
+    //     pos1 = encoder.getPosition();
+    //     while (true) {
+    //         motor.rotate_steps(i % 2 == 0 ? 1 : -1);
+    //         steps[i]++;
+    //         pos2 = encoder.getPosition();
+    //         if (pos2 != pos1) break;
+    //     }
+    // }
+
+    // cout << steps[0] << " " << steps[1] << " " << steps[2] << endl;
+    // int average = (steps[0] + steps[1] + steps[2]) / 3;
+
+    // // open the door until it gets stuck
+    // while (true) {
+    //     motor.rotate_steps(1);
+    //     pos2 = encoder.getPosition();
+    //     if (pos2 - pos1 >= average) break;
+    // }
+
+    // move until encoder stops
+    // while (true) {
+    //     motor.rotate_steps(-1);
+    //     pos2 = encoder.getPosition();
+    //     if (pos2 == pos1) break;
+    // }
+
+    // 1. get pos1, open or close the door until pos2 is one unit apart from pos1
+    // while (pos1 == encoder.getPosition()) {
+    //     // open the door 159 steps and check if the encoder value has changed
+    //     StepperMotor::rotate_steps(159);
+    //     steps += 159;
+    //     pos2 = encoder.getPosition();
+    //     if (pos2 != pos1) break;
+
+    //     // close the door 159 steps and check if the encoder value has changed
+    //     StepperMotor::rotate_steps(-159);
+    //     steps += 159;
+    //     pos2 = encoder.getPosition();
+    //     if (pos2 != pos1) break;
+    // }
+
+    // for (int i = 0; i < 159; i++) {
+    //     StepperMotor::rotate_steps(1);
+    //     steps++;
+    //     pos2 = encoder.getPosition();
+    //     if (pos2 - pos1 >= 1) break;
+    // }
+
+    // run the motor until the encoder repeats the same value
+    // while (true) {
+    //     StepperMotor::rotate_steps(-1);
+    //     steps++;
+    //     pos2 = encoder.getPosition();
+    //     if (pos2 == pos1) break;
+    // }
 
     // StepperMotor::rotate_steps(-1000);
 
@@ -53,6 +138,7 @@ void GarageDoor::calibrate(RotaryEncoder& encoder) {
     
     currentState = State::CLOSED;
     calibrationState = CalibrationState::CALIBRATED;
+    maxPosition = pos2;
     cout << "Calibration complete. Max position: " << maxPosition << endl;
 
     // cout << "Calibration complete." << endl;
@@ -62,7 +148,7 @@ void GarageDoor::open() {
     if (calibrationState == CalibrationState::CALIBRATED) {
         cout << "Opening garage door..." << endl;
         while (position < maxPosition) {
-            StepperMotor::step(1);
+            motor.rotate_steps(1);
             position++;
             currentState = State::IN_BETWEEN;
         }
@@ -76,7 +162,7 @@ void GarageDoor::close() {
     if (calibrationState == CalibrationState::CALIBRATED) {
         cout << "Closing garage door..." << endl;
         while (position > 0) {
-            StepperMotor::step(-1);
+            motor.rotate_steps(-1);
             position--;
             currentState = State::IN_BETWEEN;
         }
@@ -107,20 +193,31 @@ void GarageDoor::setStuck() {
     cout << "Door is stuck!" << endl;
     errorState = ErrorState::STUCK;
     calibrationState = CalibrationState::NOT_CALIBRATED;
+    motor.stop();
 }
 
 void GarageDoor::updatePosition(int newPosition) {
-    if (newPosition != position) {
-        int steps = newPosition - position;
-        StepperMotor::step(steps);
-        position = newPosition;
+    // if (newPosition != position) {
+    //     cout << "Updating position from " << position << " to " << newPosition << endl;
+    //     int steps = newPosition - position;
+    //     StepperMotor::rotate_steps(steps);
+    //     position = newPosition;
         
-        if (position <= 0) {
-            currentState = State::CLOSED;
-        } else if (position >= maxPosition) {
-            currentState = State::OPEN;
-        } else {
-            currentState = State::IN_BETWEEN;
-        }
+    //     if (position <= 0) {
+    //         currentState = State::CLOSED;
+    //     } else if (position >= maxPosition) {
+    //         currentState = State::OPEN;
+    //     } else {
+    //         currentState = State::IN_BETWEEN;
+    //     }
+    // }
+
+    position = newPosition;
+    if (position <= 0) {
+        currentState = State::CLOSED;
+    } else if (position >= maxPosition) {
+        currentState = State::OPEN;
+    } else {
+        currentState = State::IN_BETWEEN;
     }
 }

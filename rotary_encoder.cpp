@@ -6,10 +6,10 @@
 using namespace std;
 
 static RotaryEncoder* encoderInstance = nullptr;
-volatile bool encoder_a, encoder_b, prev_a, prev_b;
+volatile bool encoder_a, encoder_b, prev_state_a, prev_state_b;
 
 RotaryEncoder::RotaryEncoder(int pA, int pB)
-    : pinA(pA), pinB(pB), position(0) {
+    : pinA(pA), pinB(pB), position(0), rotating(false) {
     encoderInstance = this;
 }
 
@@ -22,34 +22,35 @@ void RotaryEncoder::setup() const {
     // gpio_pull_up(pinA);
     // gpio_pull_up(pinB);
 
-    gpio_set_irq_enabled_with_callback(pinA, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &RotaryEncoder::ISR_callback);
+    gpio_set_irq_enabled_with_callback(pinA, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &RotaryEncoder::IRQ_callback);
+    gpio_set_irq_enabled_with_callback(pinB, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &RotaryEncoder::IRQ_callback);
     // gpio_set_irq_enabled(pinB, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 }
 
-int RotaryEncoder::getPosition() const {
-    return position;
+int RotaryEncoder::getPosition() {
+    return encoderInstance->position;
 }
 
-void RotaryEncoder::ISR_callback(unsigned int gpio, uint32_t events) {
-    if (encoderInstance) {
-        static int8_t lookup_table[] = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};
-        static uint8_t encoder_state = 0;
+bool RotaryEncoder::isRotating() {
+    return encoderInstance->rotating;
+}
 
-        // read the state of the two input pins
-        encoder_state = ((encoder_state & 0b0011) << 2) | (gpio_get(encoderInstance->pinB) << 1) | gpio_get(encoderInstance->pinA);
+void RotaryEncoder::IRQ_callback(unsigned int gpio, uint32_t events) {
+    prev_state_a = encoder_a;
+    prev_state_b = encoder_b;
 
-        // update the position
-        encoderInstance->position += lookup_table[encoder_state & 0b1111];     
+    encoder_a = !gpio_get(encoderInstance->pinA);
+    encoder_b = !gpio_get(encoderInstance->pinB);
+
+    if (encoder_a && prev_state_a && encoder_b && !prev_state_b) {
+        encoderInstance->position++;
+        encoderInstance->rotating = true;
+        // cout << "Going clockwise | " << "Position: " << encoderInstance->position << endl;
+    } else if (encoder_a && !prev_state_a && encoder_b && prev_state_b) {
+        encoderInstance->position--;
+        encoderInstance->rotating = true;
+        // cout << "Going counter-clockwise | " << "Position: " << encoderInstance->position << endl;
+    } else if (!encoder_a && !encoder_b) {
+        encoderInstance->rotating = false;   
     }
-
-    // uint32_t gpio_state = 0;
-
-    // // read the state of the two input pins
-    // gpio_state = gpio_get(ENCODER_PIN_A) << 1;
-
-	// static bool ccw_fall = false;
-	// static bool cw_fall = false;
-	
-	// uint8_t enc_value = 0;
-	// enc_value = (gpio_state & 0x03);
 }

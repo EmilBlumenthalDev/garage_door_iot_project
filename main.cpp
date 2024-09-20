@@ -24,7 +24,7 @@ int main() {
     while (true) {
         controller.run();
         
-        // Add a small delay to prevent tight looping
+        // Small delay to prevent tight looping
         sleep_ms(10);
     }
 

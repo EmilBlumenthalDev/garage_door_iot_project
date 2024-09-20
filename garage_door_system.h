@@ -18,12 +18,14 @@ class RotaryEncoder {
     public:
         RotaryEncoder(int pA, int pB);
         void setup() const;
-        [[nodiscard]] int getPosition() const;
-        static void ISR_callback(unsigned int gpio, uint32_t events);
+        [[nodiscard]] static int getPosition() ;
+        static void IRQ_callback(unsigned int gpio, uint32_t events);
+        [[nodiscard]] static bool isRotating() ;
 
     private:
         int pinA, pinB;
         volatile int position;
+        volatile bool rotating;
 };
 
 class GarageDoor {

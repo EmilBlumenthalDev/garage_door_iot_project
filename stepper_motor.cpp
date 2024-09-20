@@ -50,7 +50,7 @@ void StepperMotor::rotate_steps(int steps) {
     // Rotate the motor in steps
     for (int s = start; s != target; s++) {
         step(clockwise);
-        sleep_ms(2);
+        sleep_us(850); // modify this to change the speed of the motor
     }
 }
 
