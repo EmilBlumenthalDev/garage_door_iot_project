@@ -34,25 +34,30 @@ void GarageDoor::calibrate(RotaryEncoder& encoder) {
 
     int pos1 = encoder.getPosition();
     int pos2;
-    int steps[3] = {0};
-
-    // move until encoder stops
-    // while (!encoder.isRotating()) {
-    //     motor.rotate_steps(-1);
-    // }
-
-    cout << "initial rotation state: " << encoder.isRotating() << endl;
+    int step_count;
+    int steps = -400;
 
     for (int i = 0; i < 3; i++) {
-        motor.rotate_steps(-200);
-        cout << encoder.isRotating() << endl;
+        motor.rotate_steps(steps);
+        step_count += steps;
     }
 
     pos2 = encoder.getPosition();
 
-    cout << "End rotation state: " << encoder.isRotating() << endl;
-    cout << "pos1: " << pos1 << endl;
-    cout << "pos2: " << pos2 << endl;
+    cout << "Position 1: " << pos1 << endl;
+    cout << "Position 2: " << pos2 << endl;
+    cout << "Step count: " << step_count << endl;
+
+    if (pos2 == pos1) {
+        cout << "Encoder is not rotating." << endl;
+        steps = -steps;
+        for (int i = 0; i < 3; i++) {
+            motor.rotate_steps(steps);
+            step_count += steps;
+        }
+    } else {
+        cout << "Encoder is rotating." << endl;
+    }
 
     // determine how many steps it takes for the encoder to detect a change
     // for (int i = 0; i < 3; i++) {

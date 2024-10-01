@@ -1,14 +1,16 @@
 #ifndef GARAGE_DOOR_SYSTEM_H
 #define GARAGE_DOOR_SYSTEM_H
+#include "garage_door_config.h"
 
 #include <cstdint>
+#include <chrono>
 
 class StepperMotor {
     public:
         StepperMotor(int p1, int p2, int p3, int p4);
         static void step(bool direction);
         static void rotate_steps(int steps);
-        void stop() const;
+        static void stop() ;
 
     private:
         int pin1, pin2, pin3, pin4;
@@ -18,40 +20,41 @@ class RotaryEncoder {
     public:
         RotaryEncoder(int pA, int pB);
         void setup() const;
-        [[nodiscard]] static int getPosition() ;
+        [[nodiscard]] static int getPosition();
         static void IRQ_callback(unsigned int gpio, uint32_t events);
-        [[nodiscard]] static bool isRotating() ;
+        static void IRQ_wrapper(uint gpio, uint32_t events);
+        [[nodiscard]] static bool isRotating();
 
     private:
         int pinA, pinB;
         volatile int position;
-        volatile bool rotating;
+        static volatile bool rotating;
 };
 
 class GarageDoor {
-public:
-    enum class State { OPEN, CLOSED, IN_BETWEEN };
-    enum class ErrorState { NORMAL, STUCK };
-    enum class CalibrationState { CALIBRATED, NOT_CALIBRATED };
-    
-    GarageDoor(int p1, int p2, int p3, int p4);
-    void calibrate(RotaryEncoder& encoder);
-    void open();
-    void close();
-    static void stop();
-    [[nodiscard]] State getState() const;
-    [[nodiscard]] ErrorState getErrorState() const;
-    [[nodiscard]] CalibrationState getCalibrationState() const;
-    void setStuck();
-    void updatePosition(int newPosition);
+    public:
+        enum class State { OPEN, CLOSED, IN_BETWEEN };
+        enum class ErrorState { NORMAL, STUCK };
+        enum class CalibrationState { CALIBRATED, NOT_CALIBRATED };
+        
+        GarageDoor(int p1, int p2, int p3, int p4);
+        void calibrate(RotaryEncoder& encoder);
+        void open();
+        void close();
+        static void stop();
+        [[nodiscard]] State getState() const;
+        [[nodiscard]] ErrorState getErrorState() const;
+        [[nodiscard]] CalibrationState getCalibrationState() const;
+        void setStuck();
+        void updatePosition(int newPosition);
 
-private:
-    State currentState;
-    ErrorState errorState;
-    CalibrationState calibrationState;
-    int position;
-    int maxPosition;
-    StepperMotor motor;
+    private:
+        State currentState;
+        ErrorState errorState;
+        CalibrationState calibrationState;
+        int position;
+        int maxPosition;
+        StepperMotor motor;
 };
 
 class LEDIndicator {

@@ -54,7 +54,7 @@ void StepperMotor::rotate_steps(int steps) {
     }
 }
 
-void StepperMotor::stop() const {
+void StepperMotor::stop() {
     // Turn off all coils to stop the motor
     gpio_put(STEP_PIN1, false);
     gpio_put(STEP_PIN2, false);
