@@ -10,6 +10,7 @@ class StepperMotor {
         StepperMotor(int p1, int p2, int p3, int p4);
         static void step(bool direction);
         static void rotate_steps(int steps);
+        static int rotate_till_edge(bool collision, bool clockwise);
         static void stop() ;
 
     private:
@@ -21,13 +22,15 @@ class RotaryEncoder {
         RotaryEncoder(int pA, int pB);
         void setup() const;
         [[nodiscard]] static int getPosition();
-        static void IRQ_callback(unsigned int gpio, uint32_t events);
+        static void IRQ_callback(uint gpio, uint32_t events);
         static void IRQ_wrapper(uint gpio, uint32_t events);
         [[nodiscard]] static bool isRotating();
+        static void resetPosition();
 
     private:
         int pinA, pinB;
         volatile int position;
+        volatile int revolutions;
         static volatile bool rotating;
 };
 

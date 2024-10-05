@@ -1,17 +1,22 @@
 #include "garage_door_system.h"
 #include <hardware/gpio.h>
+#include "pico/stdlib.h"
 #include <iostream>
 
 using namespace std;
 
 static RotaryEncoder* encoderInstance = nullptr;
 volatile bool RotaryEncoder::rotating = false;
-
 volatile bool encoder_a, encoder_b, prev_state_a, prev_state_b;
+static absolute_time_t last_movement_time, last_check_time;
+// static const uint32_t ROTATION_TIMEOUT_MS = 100; // Timeout to consider rotation stopped
+static const uint32_t STABLE_TIME_REQUIRED_US = 15000; // 20 ms
 
 RotaryEncoder::RotaryEncoder(int pA, int pB)
-    : pinA(pA), pinB(pB), position(0) {
+    : pinA(pA), pinB(pB), position(0), revolutions(0) {
     encoderInstance = this;
+    last_movement_time = get_absolute_time();
+    last_check_time = get_absolute_time();
 }
 
 void RotaryEncoder::setup() const {
@@ -35,8 +40,13 @@ int RotaryEncoder::getPosition() {
     return encoderInstance->position;
 }
 
+void RotaryEncoder::resetPosition() {
+    encoderInstance->position = 0;
+}
+
 bool RotaryEncoder::isRotating() {
-    return rotating;
+    absolute_time_t current_time = get_absolute_time();
+    return (absolute_time_diff_us(last_movement_time, current_time) < STABLE_TIME_REQUIRED_US);
 }
 
 void RotaryEncoder::IRQ_wrapper(uint gpio, uint32_t events) {
@@ -45,38 +55,28 @@ void RotaryEncoder::IRQ_wrapper(uint gpio, uint32_t events) {
     }
 }
 
-// void RotaryEncoder::IRQ_callback(uint gpio, uint32_t events) {
-//     static int8_t lookup_table[] = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0};
-//     static uint8_t encoder_state = 0;
-
-//     encoder_state = ((encoder_state & 0b0011) << 2) | (gpio_get(encoderInstance->pinB) << 1) | gpio_get(encoderInstance->pinA);
-//     encoderInstance->position += lookup_table[encoder_state & 0b1111]; // Modifies the static position
-// }
-
-void RotaryEncoder::IRQ_callback(unsigned int gpio, uint32_t events) {
+void RotaryEncoder::IRQ_callback(uint gpio, uint32_t events) {
+    prev_state_a = encoder_a;
+    prev_state_b = encoder_b;
+    
     encoder_a = !gpio_get(encoderInstance->pinA);
+    encoder_b = !gpio_get(encoderInstance->pinB);
+    
+    // Detect movement and update position
+    if (encoder_a != prev_state_a || encoder_b != prev_state_b) {
+        // Update the last movement time
+        last_movement_time = get_absolute_time();
+        rotating = true;
 
-    if (encoder_a) {
-        encoderInstance->position++;
+        if (encoder_a) {
+            encoderInstance->position++;
+        }
+        
+        // Determine direction and update position
+        // if (encoder_a && !prev_state_a && encoder_b) {
+        //     encoderInstance->position++;
+        // } else if (encoder_a && prev_state_a && !encoder_b) {
+        //     encoderInstance->position--;
+        // }
     }
 }
-
-// void RotaryEncoder::IRQ_callback(unsigned int gpio, uint32_t events) {
-//     prev_state_a = encoder_a;
-//     prev_state_b = encoder_b;
-
-//     encoder_a = !gpio_get(encoderInstance->pinA);
-//     encoder_b = !gpio_get(encoderInstance->pinB);
-
-//     if (encoder_a && prev_state_a && encoder_b && !prev_state_b) {
-//         encoderInstance->position++;
-//         encoderInstance->rotating = true;
-//         // cout << "Going clockwise | " << "Position: " << encoderInstance->position << endl;
-//     } else if (encoder_a && !prev_state_a && encoder_b && prev_state_b) {
-//         encoderInstance->position--;
-//         encoderInstance->rotating = true;
-//         // cout << "Going counter-clockwise | " << "Position: " << encoderInstance->position << endl;
-//     } else if (!encoder_a && !encoder_b) {
-//         encoderInstance->rotating = false;   
-//     }
-// }

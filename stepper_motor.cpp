@@ -22,10 +22,9 @@ StepperMotor::StepperMotor(int p1, int p2, int p3, int p4)
     gpio_set_dir(pin4, GPIO_OUT);
 }
 
-
 // function for going a step
+// if step() is called directly, include a delay in the next line
 void StepperMotor::step(bool direction) {
-    const int step_sequence[8] = {0x09, 0x08, 0x0C, 0x04, 0x06, 0x02, 0x03, 0x01};
     static int8_t step_index = 0;
 
     // if direction is clockwise

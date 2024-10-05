@@ -60,7 +60,7 @@ void GarageDoorController::handleLocalOperation() {
 }
 
 void GarageDoorController::updateStatus() {
-    int newPosition = encoder.getPosition();
+    int newPosition = RotaryEncoder::getPosition();
     door.updatePosition(newPosition);
     
     if (door.getErrorState() == GarageDoor::ErrorState::STUCK) {

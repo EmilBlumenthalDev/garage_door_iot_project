@@ -1,3 +1,4 @@
+#include <cstdint>
 #ifndef GARAGE_DOOR_CONFIG_H
 #define GARAGE_DOOR_CONFIG_H
 
@@ -22,5 +23,10 @@
 
 // Other constants
 #define BLINK_INTERVAL_MS 500
+#define STEPPER_WAITING_US 850
+#define CLOCKWISE true
+#define COUNTER_CLOCKWISE false
+
+static const uint8_t step_sequence[8] = {0x09, 0x08, 0x0C, 0x04, 0x06, 0x02, 0x03, 0x01};
 
 #endif // GARAGE_DOOR_CONFIG_H
