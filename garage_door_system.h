@@ -5,18 +5,6 @@
 #include <cstdint>
 #include <chrono>
 
-class StepperMotor {
-    public:
-        StepperMotor(int p1, int p2, int p3, int p4);
-        static void step(bool direction);
-        static void rotate_steps(int steps);
-        static int rotate_till_edge(bool collision, bool clockwise);
-        static void stop() ;
-
-    private:
-        int pin1, pin2, pin3, pin4;
-};
-
 class RotaryEncoder {
     public:
         RotaryEncoder(int pA, int pB);
@@ -34,6 +22,18 @@ class RotaryEncoder {
         static volatile bool rotating;
 };
 
+class StepperMotor {
+    public:
+        StepperMotor(int p1, int p2, int p3, int p4);
+        static void step(bool direction);
+        static void rotate_steps(int steps);
+        static void stop() ;
+        static int rotate_till_collision(bool direction, RotaryEncoder& encoder);
+
+    private:
+        int pin1, pin2, pin3, pin4;
+};
+
 class GarageDoor {
     public:
         enum class State { OPEN, CLOSED, IN_BETWEEN };
@@ -41,10 +41,11 @@ class GarageDoor {
         enum class CalibrationState { CALIBRATED, NOT_CALIBRATED };
         
         GarageDoor(int p1, int p2, int p3, int p4);
-        void calibrate(RotaryEncoder& encoder);
+        void calibrate();
         void open();
         void close();
         static void stop();
+        int getPosition() const;
         [[nodiscard]] State getState() const;
         [[nodiscard]] ErrorState getErrorState() const;
         [[nodiscard]] CalibrationState getCalibrationState() const;
@@ -57,6 +58,7 @@ class GarageDoor {
         CalibrationState calibrationState;
         int position;
         int maxPosition;
+        RotaryEncoder encoder;
         StepperMotor motor;
 };
 
@@ -93,10 +95,9 @@ class GarageDoorController {
         void updateStatus();
 
         GarageDoor door;
-        RotaryEncoder encoder;
         LEDIndicator statusLed;
         LEDIndicator errorLed;
         ButtonController buttons;
 };
 
-#endif // GARAGE_DOOR_SYSTEM_H
+#endif

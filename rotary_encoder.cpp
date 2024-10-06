@@ -30,10 +30,6 @@ void RotaryEncoder::setup() const {
 
     gpio_set_irq_enabled_with_callback(pinA, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &RotaryEncoder::IRQ_wrapper);
     gpio_set_irq_enabled(pinB, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
-
-    // gpio_set_irq_enabled_with_callback(pinA, GPIO_IRQ_EDGE_FALL, true, &RotaryEncoder::IRQ_callback);
-    // gpio_set_irq_enabled_with_callback(pinA, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &RotaryEncoder::IRQ_callback);
-    // gpio_set_irq_enabled(pinB, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true);
 }
 
 int RotaryEncoder::getPosition() {

@@ -53,6 +53,57 @@ void StepperMotor::rotate_steps(int steps) {
     }
 }
 
+int StepperMotor::rotate_till_collision(bool direction, RotaryEncoder& encoder) {
+    const int COLLISION_TIMEOUT_MS = 500;     // Time to wait for movement before declaring collision
+    const int MOVEMENT_CHECK_INTERVAL_MS = 40; // How often to check for movement
+    const int MIN_STEPS_FOR_MOVEMENT = 2;     // Minimum encoder steps to consider as movement
+    const int MOTOR_STEPS_PER_ITERATION = 60; // Number of motor steps per iteration
+    
+    int last_encoder_position = encoder.getPosition();
+    uint32_t last_movement_time = to_ms_since_boot(get_absolute_time());
+    int step_count = 0;
+    int position = 0;
+    
+    while (true) {
+        // Rotate the motor by multiple steps in the specified direction
+        int steps = direction ? MOTOR_STEPS_PER_ITERATION : -MOTOR_STEPS_PER_ITERATION;
+        rotate_steps(steps);
+        
+        // Get current time and encoder position
+        uint32_t current_time = to_ms_since_boot(get_absolute_time());
+        int current_encoder_position = encoder.getPosition();
+
+        // Update steps
+        if (direction) {
+            step_count += MOTOR_STEPS_PER_ITERATION;
+            position += MOTOR_STEPS_PER_ITERATION;
+        } else {
+            step_count -= MOTOR_STEPS_PER_ITERATION;
+            position -= MOTOR_STEPS_PER_ITERATION;
+        }
+        
+        // Check if we've seen movement
+        int position_change = abs(current_encoder_position - last_encoder_position);
+        if (position_change >= MIN_STEPS_FOR_MOVEMENT) {
+            // Movement detected, update our tracking
+            last_encoder_position = current_encoder_position;
+            last_movement_time = current_time;
+        }
+        // If no movement for COLLISION_TIMEOUT_MS, we've hit a collision
+        else if (current_time - last_movement_time >= COLLISION_TIMEOUT_MS) {
+            cout << "Collision detected! No movement for " << COLLISION_TIMEOUT_MS << "ms" << endl;
+            stop();
+            break;
+        }
+        
+        // Small delay to prevent overwhelming the system
+        sleep_ms(MOVEMENT_CHECK_INTERVAL_MS);
+    }
+    
+    cout << "POSITION: " << position << endl;
+    return step_count;
+}
+
 void StepperMotor::stop() {
     // Turn off all coils to stop the motor
     gpio_put(STEP_PIN1, false);

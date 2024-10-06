@@ -61,12 +61,6 @@
 				"parent" : 4
 			},
 			{
-				"command" : 3,
-				"file" : 1,
-				"line" : 75,
-				"parent" : 4
-			},
-			{
 				"command" : 6,
 				"file" : 0,
 				"line" : 36,
@@ -76,23 +70,29 @@
 				"command" : 5,
 				"file" : 4,
 				"line" : 47,
-				"parent" : 7
+				"parent" : 6
 			},
 			{
 				"command" : 4,
 				"file" : 3,
 				"line" : 68,
-				"parent" : 8
+				"parent" : 7
 			},
 			{
 				"file" : 2,
-				"parent" : 9
+				"parent" : 8
 			},
 			{
 				"command" : 3,
 				"file" : 2,
 				"line" : 43,
-				"parent" : 10
+				"parent" : 9
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 75,
+				"parent" : 4
 			},
 			{
 				"command" : 7,
@@ -104,7 +104,7 @@
 				"command" : 8,
 				"file" : 4,
 				"line" : 30,
-				"parent" : 7
+				"parent" : 6
 			}
 		]
 	},
@@ -1236,12 +1236,12 @@
 	"dependencies" : 
 	[
 		{
-			"backtrace" : 6,
-			"id" : "bs2_default_padded_checksummed_asm::@bc554eaed616d198a22d"
+			"backtrace" : 10,
+			"id" : "ELF2UF2Build::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 11,
-			"id" : "ELF2UF2Build::@6890427a1f51a3e7e1df"
+			"id" : "bs2_default_padded_checksummed_asm::@bc554eaed616d198a22d"
 		}
 	],
 	"id" : "garage_opener::@6890427a1f51a3e7e1df",
