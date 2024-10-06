@@ -95,18 +95,16 @@ void GarageDoor::calibrate() {
         cout << "Cannot move to closed: " << cannot_move_to_closed << endl;
         cout << "Cannot move to open: " << cannot_move_to_open << endl;
 
-        if (!cannot_move_to_closed && !cannot_move_to_open) {
-            // We ain't there yet
-            cout << "Door is not properly opened yet" << endl;
-            step_count[0] += StepperMotor::rotate_till_collision(COUNTER_CLOCKWISE, encoder);
-        }
+        step_count[0] += StepperMotor::rotate_till_collision(COUNTER_CLOCKWISE, encoder);
+
+        sleep_ms(500); // Wait before moving back
 
         step_count[1] = StepperMotor::rotate_till_collision(CLOCKWISE, encoder);
 
         // Stop touching the wall
         StepperMotor::rotate_steps(-300);
 
-        int offset = 600; // Adjust the offset as needed so the door doesn't hit the wall
+        int offset = 800; // Adjust the offset as needed so the door doesn't hit the wall
         step_count[2] = step_count[0] - (step_count[0] + step_count[1]) + offset;
 
         cout << "Step count 0: " << step_count[0] << endl;
@@ -161,13 +159,12 @@ void GarageDoor::close() {
         return;
     }
 
-    // eg: pos = -20580, max = -20580
     cout << "Closing garage door..." << endl;
     currentState = State::IN_BETWEEN;
 
     const int STEPS_PER_MOVE = 60;
 
-    // go from current position to 0
+    // Go from current position to 0
     while (position <= 0) {
         cout << "Position: " << position << endl;
         StepperMotor::rotate_steps(STEPS_PER_MOVE);

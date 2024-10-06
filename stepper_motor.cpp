@@ -54,10 +54,10 @@ void StepperMotor::rotate_steps(int steps) {
 }
 
 int StepperMotor::rotate_till_collision(bool direction, RotaryEncoder& encoder) {
-    const int COLLISION_TIMEOUT_MS = 500;     // Time to wait for movement before declaring collision
-    const int MOVEMENT_CHECK_INTERVAL_MS = 40; // How often to check for movement
-    const int MIN_STEPS_FOR_MOVEMENT = 2;     // Minimum encoder steps to consider as movement
-    const int MOTOR_STEPS_PER_ITERATION = 60; // Number of motor steps per iteration
+    const int COLLISION_TIMEOUT_MS = 600;       // Time to wait for movement before declaring collision
+    const int MOVEMENT_CHECK_INTERVAL_MS = 40;  // How often to check for movement
+    const int MIN_STEPS_FOR_MOVEMENT = 2;       // Minimum encoder steps to consider as movement
+    const int MOTOR_STEPS_PER_ITERATION = 60;   // Number of motor steps per iteration
     
     int last_encoder_position = encoder.getPosition();
     uint32_t last_movement_time = to_ms_since_boot(get_absolute_time());
