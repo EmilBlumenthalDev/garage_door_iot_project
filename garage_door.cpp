@@ -5,17 +5,41 @@
 
 using namespace std;
 
-GarageDoor::GarageDoor(int p1, int p2, int p3, int p4)
+GarageDoor::GarageDoor(int p1, int p2, int p3, int p4, ButtonController& btnCtrl)
     :   currentState(State::CLOSED),
+        lastState(State::CLOSED),
         errorState(ErrorState::NORMAL),
         calibrationState(CalibrationState::NOT_CALIBRATED),
         position(0),
         maxPosition(0),
         encoder(ENCODER_PIN_A, ENCODER_PIN_B),
-        motor(p1, p2, p3, p4) 
+        motor(p1, p2, p3, p4),
+        buttonController(btnCtrl)
 {
     // Set up the rotary encoder
     encoder.setup();
+}
+
+// << operator overload for GarageDoor::State
+ostream& operator<<(ostream& os, const GarageDoor::State& state) {
+    switch(state) {
+        case GarageDoor::State::OPEN:
+            os << "OPEN";
+            break;
+        case GarageDoor::State::CLOSED:
+            os << "CLOSED";
+            break;
+        case GarageDoor::State::OPENING:
+            os << "OPENING";
+            break;
+        case GarageDoor::State::CLOSING:
+            os << "CLOSING";
+            break;
+        case GarageDoor::State::STOPPED:
+            os << "STOPPED";
+            break;
+    }
+    return os;
 }
 
 void GarageDoor::calibrate() {
@@ -117,6 +141,7 @@ void GarageDoor::calibrate() {
     }
 
     currentState = GarageDoor::State::CLOSED;
+    lastState = GarageDoor::State::CLOSED;
     calibrationState = CalibrationState::CALIBRATED;
     maxPosition = step_count[2];
     position = 0;
@@ -135,16 +160,23 @@ void GarageDoor::open() {
     }
 
     cout << "Closing garage door..." << endl;
-    currentState = State::IN_BETWEEN;
 
     const int STEPS_PER_MOVE = 60;
-
     // go from current position to 0
     while (position >= maxPosition) {
-        cout << "Position: " << position << endl;
         StepperMotor::rotate_steps(-STEPS_PER_MOVE);
         position -= STEPS_PER_MOVE;
+
+        // Check if the operation button was pressed
+        if (buttonController.isOperationPressed()) {
+            cout << "Stop requested during opening." << endl;
+            currentState = State::STOPPED;
+            stop();
+            buttonController.setOperationButtonState(false); // Reset the button
+            return; // Exit the loop and stop
+        }
     }
+
     currentState = State::OPEN;
 }
 
@@ -160,23 +192,75 @@ void GarageDoor::close() {
     }
 
     cout << "Closing garage door..." << endl;
-    currentState = State::IN_BETWEEN;
 
     const int STEPS_PER_MOVE = 60;
-
     // Go from current position to 0
     while (position <= 0) {
-        cout << "Position: " << position << endl;
         StepperMotor::rotate_steps(STEPS_PER_MOVE);
         position += STEPS_PER_MOVE;
+
+        // Check if the operation button was pressed
+        if (buttonController.isOperationPressed()) {
+            cout << "Stop requested during closing." << endl;
+            currentState = State::STOPPED;
+            stop();
+            buttonController.setOperationButtonState(false); // Reset the button
+            return; // Exit the loop and stop
+        }
     }
-    
+
     currentState = State::CLOSED;
 }
 
 void GarageDoor::stop() {
     StepperMotor::stop();
 }
+
+void GarageDoor::toggleMovement() {
+    if (calibrationState == CalibrationState::NOT_CALIBRATED) {
+        return;
+    }
+
+    buttonController.setOperationButtonState(false);
+
+    cout << "Current state: " << currentState << endl;
+    
+    switch(currentState) {
+        case State::OPEN:
+            cout << "Close the door" << endl;
+            currentState = State::CLOSING;
+            lastState = State::OPEN;
+            close();
+            break;
+        case State::OPENING:
+            cout << "Stop" << endl;
+            currentState = State::STOPPED;
+            stop();
+            break;
+        case State::CLOSED:
+            cout << "Open the door" << endl;
+            currentState = State::OPENING;
+            lastState = State::CLOSED;
+            open();
+            break;
+        case State::CLOSING:
+            cout << "Stop" << endl;
+            currentState = State::STOPPED;
+            stop();
+            break;
+        case State::STOPPED:
+            cout << "Starting to open the garage door..." << endl;
+            if (lastState == State::OPEN) {
+                currentState = State::OPENING;
+                open();
+            } else {
+                currentState = State::CLOSING;
+                close();
+            }
+            break;
+    }
+}
+
 
 GarageDoor::State GarageDoor::getState() const {
     return currentState;
@@ -199,15 +283,4 @@ void GarageDoor::setStuck() {
     errorState = ErrorState::STUCK;
     calibrationState = CalibrationState::NOT_CALIBRATED;
     StepperMotor::stop();
-}
-
-void GarageDoor::updatePosition(int newPosition) {
-    position = newPosition;
-    if (position <= 0) {
-        currentState = State::OPEN;
-    } else if (position >= maxPosition) {
-        currentState = State::CLOSED;
-    } else {
-        currentState = State::IN_BETWEEN;
-    }
 }

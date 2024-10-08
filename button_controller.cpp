@@ -4,6 +4,8 @@
 
 using namespace std;
 
+bool ButtonController::buttonPressed = false;
+
 ButtonController::ButtonController(int b1, int b2, int b3)
     : calibrationButton1(b1), calibrationButton2(b2), operationButton(b3) {}
 
@@ -19,6 +21,12 @@ void ButtonController::setup() const {
     gpio_pull_up(calibrationButton1);
     gpio_pull_up(calibrationButton2);
     gpio_pull_up(operationButton);
+
+    gpio_set_irq_enabled_with_callback(operationButton, GPIO_IRQ_EDGE_RISE, true,  &RotaryEncoder::IRQ_wrapper);   
+}
+
+void ButtonController::setOperationButtonState(bool state) {
+    buttonPressed = state;
 }
 
 bool ButtonController::isCalibrationPressed() const {
@@ -27,5 +35,5 @@ bool ButtonController::isCalibrationPressed() const {
 }
 
 bool ButtonController::isOperationPressed() const {
-    return !gpio_get(operationButton);
+    return buttonPressed;
 }

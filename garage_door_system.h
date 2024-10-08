@@ -34,13 +34,26 @@ class StepperMotor {
         int pin1, pin2, pin3, pin4;
 };
 
+class ButtonController {
+    public:
+        ButtonController(int b1, int b2, int b3);
+        void setup() const;
+        [[nodiscard]] bool isCalibrationPressed() const;
+        [[nodiscard]] bool isOperationPressed() const;
+        static void setOperationButtonState(bool state);
+
+    private:
+        static bool buttonPressed;
+        int calibrationButton1, calibrationButton2, operationButton;
+};
+
 class GarageDoor {
     public:
-        enum class State { OPEN, CLOSED, IN_BETWEEN };
+        enum class State { OPEN, CLOSED, OPENING, CLOSING, STOPPED };
         enum class ErrorState { NORMAL, STUCK };
         enum class CalibrationState { CALIBRATED, NOT_CALIBRATED };
         
-        GarageDoor(int p1, int p2, int p3, int p4);
+        GarageDoor(int p1, int p2, int p3, int p4, ButtonController& btnCtrl);
         void calibrate();
         void open();
         void close();
@@ -50,16 +63,18 @@ class GarageDoor {
         [[nodiscard]] ErrorState getErrorState() const;
         [[nodiscard]] CalibrationState getCalibrationState() const;
         void setStuck();
-        void updatePosition(int newPosition);
+        void toggleMovement();
 
     private:
         State currentState;
+        State lastState;
         ErrorState errorState;
         CalibrationState calibrationState;
         int position;
         int maxPosition;
         RotaryEncoder encoder;
         StepperMotor motor;
+        ButtonController& buttonController;
 };
 
 class LEDIndicator {
@@ -71,17 +86,6 @@ class LEDIndicator {
 
     private:
         int ledPin;
-};
-
-class ButtonController {
-    public:
-        ButtonController(int b1, int b2, int b3);
-        void setup() const;
-        [[nodiscard]] bool isCalibrationPressed() const;
-        [[nodiscard]] bool isOperationPressed() const;
-
-    private:
-        int calibrationButton1, calibrationButton2, operationButton;
 };
 
 class GarageDoorController {

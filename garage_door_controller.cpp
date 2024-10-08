@@ -6,16 +6,16 @@
 using namespace std;
 
 GarageDoorController::GarageDoorController()
-    :   door(STEP_PIN1, STEP_PIN2, STEP_PIN3, STEP_PIN4),
-        statusLed(STATUS_LED_PIN),
+    :   statusLed(STATUS_LED_PIN),
         errorLed(ERROR_LED_PIN),
-        buttons(CALIBRATION_BUTTON1, CALIBRATION_BUTTON2, OPERATION_BUTTON)
+        buttons(CALIBRATION_BUTTON1, CALIBRATION_BUTTON2, OPERATION_BUTTON),
+        door(STEP_PIN1, STEP_PIN2, STEP_PIN3, STEP_PIN4, buttons)
 {
 
     cout << "Initializing Garage Door Controller..." << endl;
 
     // Set up the buttons
-    buttons.setup();
+    // buttons.setup();
 
     // Initial LED states
     statusLed.turnOff(); // Assume door starts closed
@@ -38,26 +38,15 @@ void GarageDoorController::handleLocalOperation() {
         cout << "Calibrating garage door..." << endl;
         door.calibrate();
     }
-    
+
     if (buttons.isOperationPressed()) {
-        switch (door.getState()) {
-            case GarageDoor::State::CLOSED:
-                door.open();
-                break;
-            case GarageDoor::State::OPEN:
-                door.close();
-                break;
-            case GarageDoor::State::IN_BETWEEN:
-                door.stop();
-                break;
-        }
+        cout << "Operation button pressed" << endl;
+        door.toggleMovement();
+        buttons.setOperationButtonState(false);
     }
 }
 
 void GarageDoorController::updateStatus() {
-    int newPosition = door.getPosition();
-    door.updatePosition(newPosition);
-    
     if (door.getErrorState() == GarageDoor::ErrorState::STUCK) {
         errorLed.blink();
     } else {
@@ -73,7 +62,7 @@ void GarageDoorController::updateStatus() {
         case GarageDoor::State::OPEN:
             statusLed.turnOn();
             break;
-        case GarageDoor::State::IN_BETWEEN:
+        case GarageDoor::State::STOPPED:
             statusLed.blink();
             break;
     }

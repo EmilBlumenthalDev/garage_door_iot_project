@@ -9,7 +9,6 @@ static RotaryEncoder* encoderInstance = nullptr;
 volatile bool RotaryEncoder::rotating = false;
 volatile bool encoder_a, encoder_b, prev_state_a, prev_state_b;
 static absolute_time_t last_movement_time, last_check_time;
-// static const uint32_t ROTATION_TIMEOUT_MS = 100; // Timeout to consider rotation stopped
 static const uint32_t STABLE_TIME_REQUIRED_US = 15000; // 20 ms
 
 RotaryEncoder::RotaryEncoder(int pA, int pB)
@@ -46,8 +45,15 @@ bool RotaryEncoder::isRotating() {
 }
 
 void RotaryEncoder::IRQ_wrapper(uint gpio, uint32_t events) {
+    // cout << "gpio: " << gpio << endl;
     if (encoderInstance) {
         RotaryEncoder::IRQ_callback(gpio, events);
+    }
+
+    if (gpio == OPERATION_BUTTON) {
+        // just set a flag
+        cout << "IRQ wrapper detected button press" << endl;
+        ButtonController::setOperationButtonState(true);
     }
 }
 
@@ -74,5 +80,5 @@ void RotaryEncoder::IRQ_callback(uint gpio, uint32_t events) {
         // } else if (encoder_a && prev_state_a && !encoder_b) {
         //     encoderInstance->position--;
         // }
-    }
+    } 
 }
