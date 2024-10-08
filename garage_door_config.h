@@ -27,6 +27,12 @@
 #define CLOCKWISE true
 #define COUNTER_CLOCKWISE false
 
+// Constants for checking if stuck
+#define COLLISION_TIMEOUT_MS 600
+#define MOVEMENT_CHECK_INTERVAL_MS 40
+#define MOVEMENT_THRESHOLD 2
+#define MOTOR_STEPS_PER_ITERATION 60
+
 static const uint8_t step_sequence[8] = {0x09, 0x08, 0x0C, 0x04, 0x06, 0x02, 0x03, 0x01};
 
 #endif

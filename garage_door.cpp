@@ -48,17 +48,8 @@ void GarageDoor::calibrate() {
 
     // While calibration is not successful, keep trying
     while (!calibration_success) {
-        // 20 steps seems to be a reliable number of steps that the rotary encoder can detect movement from the motor using isRotating();
-        // the encoder can detect the stopping of the motor from 20 steps quite reliably using isRotating();
-
-        // when rotating the motor, a positive value rotates the motor CLOCKWISE
-        // and a negative value rotates the motor counter-CLOCKWISE
-        // this should rotate the motor CLOCKWISE until there is a collision
-        // detecting that the motor has moved with the rotary encoder is faster by moving the motor and checking if the rotary encoder is moving
-
         auto check_stuck = [this](bool direction) -> bool {
             const int TEST_STEPS = 400; // Number of steps to try moving
-            const int MOVEMENT_THRESHOLD = 2; // Minimum encoder movement to consider not stuck
             
             int initial_position = encoder.getPosition();
             
@@ -85,9 +76,6 @@ void GarageDoor::calibrate() {
         bool cannot_move_to_closed = check_stuck(true);
         bool cannot_move_to_open = check_stuck(false);
 
-        cout << "Cannot move to closed: " << cannot_move_to_closed << endl;
-        cout << "Cannot move to open: " << cannot_move_to_open << endl;
-
         // Verify we're at bottom by checking movement
         if (cannot_move_to_closed && cannot_move_to_open) {
             cout << "Error: Cannot move at all" << endl;
@@ -110,8 +98,8 @@ void GarageDoor::calibrate() {
 
         // Move to open position
         encoder.resetPosition();
-
         step_count[0] = StepperMotor::rotate_till_collision(COUNTER_CLOCKWISE, encoder);
+        cout << "Rotary encoder position at open: " << encoder.getPosition() << endl;
 
         cannot_move_to_closed = check_stuck(true); 
         cannot_move_to_open = check_stuck(false);
@@ -123,12 +111,14 @@ void GarageDoor::calibrate() {
 
         sleep_ms(500); // Wait before moving back
 
+        encoder.resetPosition();
         step_count[1] = StepperMotor::rotate_till_collision(CLOCKWISE, encoder);
+        cout << "Rotary encoder position at close: " << encoder.getPosition() << endl;
 
         // Stop touching the wall
         StepperMotor::rotate_steps(-300);
 
-        int offset = 800; // Adjust the offset as needed so the door doesn't hit the wall
+        int offset = 740; // Adjust the offset as needed so the door doesn't hit the wall.
         step_count[2] = step_count[0] - (step_count[0] + step_count[1]) + offset;
 
         cout << "Step count 0: " << step_count[0] << endl;
@@ -140,6 +130,7 @@ void GarageDoor::calibrate() {
         calibration_success = true;
     }
 
+    encoder.resetPosition();
     currentState = GarageDoor::State::CLOSED;
     lastState = GarageDoor::State::CLOSED;
     calibrationState = CalibrationState::CALIBRATED;
@@ -159,21 +150,42 @@ void GarageDoor::open() {
         return;
     }
 
-    cout << "Closing garage door..." << endl;
+    encoder.resetPosition();
+    int last_encoder_position = encoder.getPosition();
+    uint32_t last_movement_time = to_ms_since_boot(get_absolute_time());
 
-    const int STEPS_PER_MOVE = 60;
     // go from current position to 0
     while (position >= maxPosition) {
-        StepperMotor::rotate_steps(-STEPS_PER_MOVE);
-        position -= STEPS_PER_MOVE;
+        StepperMotor::rotate_steps(-MOTOR_STEPS_PER_ITERATION);
+
+        // Get current time and encoder position
+        uint32_t current_time = to_ms_since_boot(get_absolute_time());
+        int current_encoder_position = encoder.getPosition();
+
+        // Update steps
+        position -= MOTOR_STEPS_PER_ITERATION;
+
+        // Check if we've seen movement
+        int position_change = abs(current_encoder_position - last_encoder_position);
+        if (position_change >= MOVEMENT_THRESHOLD) {
+            // Movement detected, update our tracking
+            last_encoder_position = current_encoder_position;
+            last_movement_time = current_time;
+        }
+        // If no movement for COLLISION_TIMEOUT_MS, we've hit a collision
+        else if (current_time - last_movement_time >= COLLISION_TIMEOUT_MS) {
+            stop();
+            errorState = ErrorState::STUCK;
+            calibrationState = CalibrationState::NOT_CALIBRATED;
+            break;
+        }
 
         // Check if the operation button was pressed
         if (buttonController.isOperationPressed()) {
-            cout << "Stop requested during opening." << endl;
             currentState = State::STOPPED;
             stop();
             buttonController.setOperationButtonState(false); // Reset the button
-            return; // Exit the loop and stop
+            return;
         }
     }
 
@@ -191,17 +203,39 @@ void GarageDoor::close() {
         return;
     }
 
-    cout << "Closing garage door..." << endl;
+    encoder.resetPosition();
+    int last_encoder_position = encoder.getPosition();
+    uint32_t last_movement_time = to_ms_since_boot(get_absolute_time());
 
-    const int STEPS_PER_MOVE = 60;
     // Go from current position to 0
     while (position <= 0) {
-        StepperMotor::rotate_steps(STEPS_PER_MOVE);
-        position += STEPS_PER_MOVE;
+        StepperMotor::rotate_steps(MOTOR_STEPS_PER_ITERATION);
+
+        // Get current time and encoder position
+        uint32_t current_time = to_ms_since_boot(get_absolute_time());
+        int current_encoder_position = encoder.getPosition();
+
+        // Update steps
+        position += MOTOR_STEPS_PER_ITERATION;
+
+        // Check if we've seen movement
+        int position_change = abs(current_encoder_position - last_encoder_position);
+        if (position_change >= MOVEMENT_THRESHOLD) {
+            // Movement detected, update our tracking
+            last_encoder_position = current_encoder_position;
+            last_movement_time = current_time;
+        }
+
+        // If no movement for COLLISION_TIMEOUT_MS, we've hit a collision
+        else if (current_time - last_movement_time >= COLLISION_TIMEOUT_MS) {
+            stop();
+            errorState = ErrorState::STUCK;
+            calibrationState = CalibrationState::NOT_CALIBRATED;
+            break;
+        }
 
         // Check if the operation button was pressed
         if (buttonController.isOperationPressed()) {
-            cout << "Stop requested during closing." << endl;
             currentState = State::STOPPED;
             stop();
             buttonController.setOperationButtonState(false); // Reset the button
@@ -260,7 +294,6 @@ void GarageDoor::toggleMovement() {
             break;
     }
 }
-
 
 GarageDoor::State GarageDoor::getState() const {
     return currentState;

@@ -45,14 +45,11 @@ bool RotaryEncoder::isRotating() {
 }
 
 void RotaryEncoder::IRQ_wrapper(uint gpio, uint32_t events) {
-    // cout << "gpio: " << gpio << endl;
     if (encoderInstance) {
         RotaryEncoder::IRQ_callback(gpio, events);
     }
 
     if (gpio == OPERATION_BUTTON) {
-        // just set a flag
-        cout << "IRQ wrapper detected button press" << endl;
         ButtonController::setOperationButtonState(true);
     }
 }
@@ -73,12 +70,5 @@ void RotaryEncoder::IRQ_callback(uint gpio, uint32_t events) {
         if (encoder_a) {
             encoderInstance->position++;
         }
-        
-        // Determine direction and update position
-        // if (encoder_a && !prev_state_a && encoder_b) {
-        //     encoderInstance->position++;
-        // } else if (encoder_a && prev_state_a && !encoder_b) {
-        //     encoderInstance->position--;
-        // }
     } 
 }
