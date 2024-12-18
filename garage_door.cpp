@@ -1,3 +1,5 @@
+// Created by: Emil Blumenthal
+
 #include "garage_door_system.h"
 #include "garage_door_config.h"
 #include <iostream>
@@ -16,11 +18,9 @@ GarageDoor::GarageDoor(int p1, int p2, int p3, int p4, ButtonController& btnCtrl
         motor(p1, p2, p3, p4),
         buttonController(btnCtrl)
 {
-    // Set up the rotary encoder
     encoder.setup();
 }
 
-// << operator overload for GarageDoor::State
 ostream& operator<<(ostream& os, const GarageDoor::State& state) {
     switch(state) {
         case GarageDoor::State::OPEN:
@@ -301,19 +301,4 @@ GarageDoor::State GarageDoor::getState() const {
 
 GarageDoor::ErrorState GarageDoor::getErrorState() const {
     return errorState;
-}
-
-GarageDoor::CalibrationState GarageDoor::getCalibrationState() const {
-    return calibrationState;
-}
-
-int GarageDoor::getPosition() const {
-    return position;
-}
-
-void GarageDoor::setStuck() {
-    cout << "Door is stuck!" << endl;
-    errorState = ErrorState::STUCK;
-    calibrationState = CalibrationState::NOT_CALIBRATED;
-    StepperMotor::stop();
 }

@@ -1,8 +1,8 @@
+// Created by: Emil Blumenthal
+
 #include "garage_door_system.h"
 #include <iostream>
 #include "pico/stdlib.h"
-#include <hardware/gpio.h>
-#include <hardware/pwm.h>
 
 using namespace std;
 
@@ -24,7 +24,6 @@ int main() {
     while (true) {
         controller.run();
         
-        // Small delay to prevent tight looping
         sleep_ms(10);
     }
 

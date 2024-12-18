@@ -1,7 +1,8 @@
+// Created by: Emil Blumenthal
+
 #include "garage_door_system.h"
 #include <hardware/gpio.h>
 #include "pico/stdlib.h"
-#include <iostream>
 
 using namespace std;
 

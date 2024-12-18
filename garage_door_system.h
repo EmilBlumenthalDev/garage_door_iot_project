@@ -1,3 +1,5 @@
+// Created by: Emil Blumenthal
+
 #ifndef GARAGE_DOOR_SYSTEM_H
 #define GARAGE_DOOR_SYSTEM_H
 #include "garage_door_config.h"
@@ -98,10 +100,10 @@ class GarageDoorController {
         void handleLocalOperation();
         void updateStatus();
 
-        GarageDoor door;
         LEDIndicator statusLed;
         LEDIndicator errorLed;
         ButtonController buttons;
+        GarageDoor door;
 };
 
 #endif

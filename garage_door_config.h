@@ -1,3 +1,5 @@
+// Created by: Emil Blumenthal
+
 #include <cstdint>
 #ifndef GARAGE_DOOR_CONFIG_H
 #define GARAGE_DOOR_CONFIG_H

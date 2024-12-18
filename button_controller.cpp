@@ -1,3 +1,5 @@
+// Created by: Emil Blumenthal
+
 #include "garage_door_system.h"
 #include "pico/stdlib.h"
 #include <hardware/gpio.h>
@@ -30,7 +32,6 @@ void ButtonController::setOperationButtonState(bool state) {
 }
 
 bool ButtonController::isCalibrationPressed() const {
-    // Both calibration buttons must be pressed simultaneously
     return !gpio_get(calibrationButton1) && !gpio_get(calibrationButton2);
 }
 

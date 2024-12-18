@@ -1,6 +1,7 @@
+// Created by: Emil Blumenthal
+
 #include "garage_door_system.h"
 #include "garage_door_config.h"
-#include "pico/stdlib.h"
 #include <iostream>
 
 using namespace std;
@@ -13,9 +14,6 @@ GarageDoorController::GarageDoorController()
 {
 
     cout << "Initializing Garage Door Controller..." << endl;
-
-    // Set up the buttons
-    // buttons.setup();
 
     // Initial LED states
     statusLed.turnOff(); // Assume door starts closed
@@ -52,8 +50,6 @@ void GarageDoorController::updateStatus() {
     } else {
         errorLed.turnOff();
     }
-
-    // cout << "State: " << (door.getState() == GarageDoor::State::OPEN ? "OPEN" : (door.getState() == GarageDoor::State::CLOSED ? "CLOSED" : "IN_BETWEEN")) << endl;
     
     switch (door.getState()) {
         case GarageDoor::State::CLOSED:

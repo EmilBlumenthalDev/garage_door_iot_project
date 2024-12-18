@@ -1,3 +1,5 @@
+// Created by: Emil Blumenthal
+
 #include "garage_door_system.h"
 #include "garage_door_config.h"
 #include "pico/stdlib.h"
@@ -10,7 +12,6 @@ using namespace std;
 
 StepperMotor::StepperMotor(int p1, int p2, int p3, int p4)
     : pin1(p1), pin2(p2), pin3(p3), pin4(p4) {
-    // Initialize GPIO pins
     gpio_init(pin1);
     gpio_init(pin2);
     gpio_init(pin3);
@@ -22,12 +23,12 @@ StepperMotor::StepperMotor(int p1, int p2, int p3, int p4)
     gpio_set_dir(pin4, GPIO_OUT);
 }
 
-// function for going a step
-// if step() is called directly, include a delay in the next line
+// Function for going a step
+// If step() is called directly, include a delay in the next line
 void StepperMotor::step(bool direction) {
     static int8_t step_index = 0;
 
-    // if direction is clockwise
+    // If direction is clockwise
     if (direction) {
         if (++step_index >= 8) step_index = 0;
     } else {
